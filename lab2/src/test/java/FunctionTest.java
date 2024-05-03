@@ -48,9 +48,10 @@ public class FunctionTest {
 
 
         try {
+            //инициализация для записи резов
             funcOut = new FileWriter("/Users/aleksandra/IdeaProjects/testing2/src/test/resources/out/func.csv");
             funcPrinter = CSVFormat.DEFAULT.print(funcOut);
-
+// ЧТЕНИЕ ВХОДНЫХ ДАННЫХ
             sinIn = new FileReader("src/test/resources/in/sin.csv");
             cosIn = new FileReader("src/test/resources/in/cos.csv");
             cotIn = new FileReader("src/test/resources/in/cot.csv");
@@ -62,6 +63,11 @@ public class FunctionTest {
             log5In = new FileReader("src/test/resources/in/log5.csv");
             log10In = new FileReader("src/test/resources/in/log10.csv");
 
+
+            // Настраивает мок для функции косинуса, используя данные из CSV файла cosIn.
+            // Для каждой строки в файле, он указывает, что при вызове метода solve с определенными аргументами,
+            // мок должен возвращать значение из второго столбца этой строки.
+            // МОКИ сами записывают сами
             Iterable<CSVRecord> records = CSVFormat.DEFAULT.parse(sinIn);
             for (CSVRecord record : records) {
                 Mockito.when(sinMock.solve(Double.parseDouble(record.get(0)), epsilon)).thenReturn(Double.valueOf(record.get(1)));
@@ -86,6 +92,8 @@ public class FunctionTest {
             for (CSVRecord record : records) {
                 Mockito.when(logMock.solve(Double.parseDouble(record.get(0)), epsilon, 2)).thenReturn(Double.valueOf(record.get(1)));
             }
+            //Это означает, что при тестировании, если метод solve мока logMock будет вызван с этими аргументами,
+            // он вернет значение, указанное во втором столбце соответствующей строки в CSV файле.
             records = CSVFormat.DEFAULT.parse(log3In);
             for (CSVRecord record : records) {
                 Mockito.when(logMock.solve(Double.parseDouble(record.get(0)), epsilon, 3)).thenReturn(Double.valueOf(record.get(1)));
@@ -119,7 +127,13 @@ public class FunctionTest {
         Function function = new Function(new Sin(), cosMock, cotMock, cscMock, logMock);
         Assertions.assertEquals(expected, function.solve(value, epsilon), epsilon);
     }
-
+//  Указывает, что это параметризованный тест, который будет выполняться с различными наборами данных. (значения от -0.5 до 0.5 сам пройдем по эти значениям с определенным шагом)
+    //Указывает источник данных для параметризованного теста.
+    // Предоставляет описание теста, которое будет отображаться в отчетах о тестировании.
+    // value и expected. Эти параметры будут автоматически заполнены значениями из каждой строки файла in/func.csv при выполнении теста.
+    // вызываем метод solve и проверяем результат с ожидаемым
+    //интеграционные тестирование, в последоватеольно заменяются моки
+    // подсовываем реализацию вместо заглушки
     @ParameterizedTest
     @CsvFileSource(resources = "in/func.csv")
     @DisplayName("test sin cos and mocks")
@@ -191,14 +205,15 @@ public class FunctionTest {
         Function function = new Function(new Sin(), new Cos(new Sin()), new Cot(new Sin(), new Cos(new Sin())), new Csc(new Sin()), new Log(new Ln()));
         Assertions.assertEquals(expected, function.solve(value, epsilon), epsilon);
     }
-
+// тест на запись. проверка правильности записи на OUT
     @ParameterizedTest
     @CsvFileSource(resources = "in/func.csv")
     void testSystemWithMocks(double value, double expected) {
         Function function = new Function(new Sin(), new Cos(new Sin()), new Cot(new Sin(), new Cos(new Sin())), new Csc(new Sin()), new Log(new Ln()));
         Assertions.assertEquals(expected, function.writeResultToCSV(value, epsilon, funcPrinter), epsilon);
     }
-
+    // после выполнения всех тестов в классе
+    // Этот метод гарантирует, что после выполнения всех тестов ресурсы, связанные с файлом, будут корректно закрыты,
     @AfterAll
     static void closeCsv() {
         try {
